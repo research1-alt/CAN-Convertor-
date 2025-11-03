@@ -1,0 +1,5 @@
+{
+  "name": "CAN Log Converter & Analyzer",
+  "description": "An intelligent tool to upload CAN (Controller Area Network) log files (.log & .trc), convert them into structured CSV format, and analyze them with AI.",
+  "requestFramePermissions": []
+}

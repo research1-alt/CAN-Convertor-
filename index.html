@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CAN Log Converter & Analyzer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      :root {
+        --color-background: #0D1117;
+        --color-container: #161B22;
+        --color-border: rgba(13, 119, 248, 0.2);
+        --color-accent: #0d77f8;
+        --color-accent-glow: rgba(13, 119, 248, 0.4);
+        --color-text-primary: #e6edf3;
+        --color-text-secondary: #7d8590;
+      }
+      body {
+        background-color: var(--color-background);
+        color: var(--color-text-primary);
+        background-image: 
+          linear-gradient(rgba(22, 27, 34, 0.8) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(22, 27, 34, 0.8) 1px, transparent 1px);
+        background-size: 3rem 3rem;
+      }
+      /* Custom scrollbar for a better dark-theme experience */
+      .custom-scrollbar::-webkit-scrollbar {
+        height: 6px;
+        width: 6px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 3px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: rgba(13, 119, 248, 0.4);
+        border-radius: 3px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: rgba(13, 119, 248, 0.6);
+      }
+    </style>
+<script type="importmap">
+{
+  "imports": {
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "xlsx": "https://aistudiocdn.com/xlsx@^0.18.5",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.28.0",
+    "react-chartjs-2": "https://aistudiocdn.com/react-chartjs-2@^5.3.1",
+    "chart.js": "https://aistudiocdn.com/chart.js@^4.5.1",
+    "chartjs-plugin-zoom": "https://aistudiocdn.com/chartjs-plugin-zoom@^2.2.0",
+    "vite": "https://aistudiocdn.com/vite@^7.1.12",
+    "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.1.0"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body class="bg-gray-900 text-gray-100">
+    <div id="root"></div>
+    <script type="module" src="/src/index.tsx"></script>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>
