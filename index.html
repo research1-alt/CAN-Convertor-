@@ -3,12 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OSM Live | Tactical HUD</title>
+    <title>OSM Live | PCAN Tactical HUD</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
       @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Orbitron:wght@400;700;900&display=swap');
-      body { font-family: 'Inter', sans-serif; background-color: #0f172a; color: white; }
+      body { 
+        font-family: 'Inter', sans-serif; 
+        background-color: #0f172a; 
+        color: #f8fafc; 
+        margin: 0;
+        overflow: hidden;
+      }
       .font-orbitron { font-family: 'Orbitron', sans-serif; }
+      
+      /* Tactical scrollbar */
+      ::-webkit-scrollbar { width: 6px; height: 6px; }
+      ::-webkit-scrollbar-track { background: #0f172a; }
+      ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+      ::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+      .glass-card {
+        background: rgba(30, 41, 59, 0.7);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+      }
     </style>
 <script type="importmap">
 {
@@ -17,13 +35,13 @@
     "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
     "react/": "https://esm.sh/react@^19.2.4/",
     "@google/genai": "https://esm.sh/@google/genai@^1.41.0",
-    "lucide-react": "https://esm.sh/lucide-react@^0.570.0",
+    "lucide-react": "https://esm.sh/lucide-react@^0.574.0",
     "recharts": "https://esm.sh/recharts@^3.7.0",
     "vite": "https://esm.sh/vite@^7.3.1",
     "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.4",
     "path": "https://esm.sh/path@^0.12.7",
-    "electron": "https://esm.sh/electron@^40.4.1",
-    "url": "https://esm.sh/url@^0.11.4"
+    "url": "https://esm.sh/url@^0.11.4",
+    "electron": "https://esm.sh/electron@^40.4.1"
   }
 }
 </script>

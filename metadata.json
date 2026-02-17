@@ -1,7 +1,8 @@
-
 {
   "requestFramePermissions": [
     "serial",
     "bluetooth"
-  ]
+  ],
+  "name": "Copy of OSM LIVE SYSTEM | 17-02-2026",
+  "description": ""
 }

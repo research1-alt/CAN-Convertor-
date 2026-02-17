@@ -38,14 +38,6 @@
   "build": {
     "appId": "com.osm.live.hud",
     "productName": "OSM Live HUD",
-    "directories": {
-      "output": "build"
-    },
-    "files": [
-      "dist/**/*",
-      "main.js",
-      "preload.js"
-    ],
     "win": {
       "target": "nsis"
     }

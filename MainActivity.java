@@ -1,4 +1,3 @@
-
 package com.example.osmlive;
 
 import android.Manifest;
@@ -73,7 +72,6 @@ public class MainActivity extends AppCompatActivity {
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private boolean isScanning = false;
 
-    // Temporary storage for file data during picker transition
     private String pendingFileData = "";
 
     private final ActivityResultLauncher<Intent> enableBtLauncher = registerForActivityResult(
@@ -97,7 +95,7 @@ public class MainActivity extends AppCompatActivity {
                         writeDataToUri(uri, pendingFileData);
                     }
                 }
-                pendingFileData = ""; // Clear buffer
+                pendingFileData = ""; 
             }
     );
 
@@ -112,7 +110,8 @@ public class MainActivity extends AppCompatActivity {
         checkAndRequestPermissions();
         setupWebView();
         
-        webView.loadUrl("https://live-data-rust.vercel.app/");
+        // Target URL updated per user request
+        webView.loadUrl("https://can-log-convertor.vercel.app/");
         setupBackNavigation();
     }
 
@@ -295,7 +294,6 @@ public class MainActivity extends AppCompatActivity {
             if (newState == BluetoothProfile.STATE_CONNECTED) {
                 sendToJs("LINK: Handshake initiated.");
                 if (ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED) {
-                    // Delay MTU to allow internal stack preparation
                     mainHandler.postDelayed(() -> {
                         if (ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED) {
                             gatt.requestMtu(512);
@@ -317,7 +315,6 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onMtuChanged(BluetoothGatt gatt, int mtu, int status) {
             sendToJs("LINK: MTU Sync (" + mtu + " bytes)");
-            // Crucial: Wait before discovering services after MTU change
             mainHandler.postDelayed(() -> {
                 if (ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED) {
                     gatt.discoverServices();

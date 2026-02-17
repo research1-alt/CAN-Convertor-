@@ -1,27 +1,20 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
+import { fileURLToPath } from 'url';
 
-export default defineConfig(({ command }) => ({
+// Fix: __dirname is not available in ESM modules (Vite), so we define it manually using import.meta.url
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+export default defineConfig({
   plugins: [react()],
-  base: command === 'build' ? './' : '/', 
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './'),
-    },
-    extensions: ['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json']
-  },
-  build: {
-    outDir: 'dist',
-    emptyOutDir: true,
-    rollupOptions: {
-      input: {
-        main: path.resolve(__dirname, 'index.html'),
-      },
     },
   },
   server: {
     port: 5173,
     strictPort: true,
   }
-}));
+});
