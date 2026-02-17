@@ -1,7 +1,5 @@
 
 {
-  "name": "OSM PCAN LIVE HUB",
-  "description": "Professional-grade CAN bus diagnostic terminal with AI insights.",
   "requestFramePermissions": [
     "serial",
     "bluetooth"

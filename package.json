@@ -1,51 +1,24 @@
 
 {
-  "name": "osm-pcan-live",
+  "name": "osm-live-hud",
   "private": true,
   "version": "1.0.0",
-  "main": "electron/main.js",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview",
-    "electron:dev": "concurrently \"npm run dev\" \"wait-on http://localhost:3000 && cross-env NODE_ENV=development electron .\"",
-    "electron:build": "npm run build && electron-builder"
+    "preview": "vite preview"
   },
   "dependencies": {
-    "react": "^19.2.3",
-    "react-dom": "^19.2.3",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
     "@google/genai": "^1.34.0",
-    "lucide-react": "^0.562.0",
-    "recharts": "2.15.0",
-    "clsx": "^2.1.1",
-    "tailwind-merge": "^2.3.0"
+    "lucide-react": "^0.460.0",
+    "recharts": "2.13.0"
   },
   "devDependencies": {
-    "@types/react": "^19.0.0",
-    "@types/react-dom": "^19.0.0",
-    "@vitejs/plugin-react": "^4.3.1",
-    "typescript": "^5.5.0",
-    "vite": "^6.0.0",
-    "electron": "^33.0.0",
-    "electron-builder": "^25.1.8",
-    "concurrently": "^9.1.0",
-    "wait-on": "^8.0.1",
-    "cross-env": "^7.0.3"
-  },
-  "build": {
-    "appId": "com.osm.pcanlive",
-    "productName": "OSM PCAN Live",
-    "directories": {
-      "output": "dist_electron"
-    },
-    "files": [
-      "dist/**/*",
-      "electron/**/*",
-      "package.json"
-    ],
-    "win": {
-      "target": "nsis"
-    }
+    "@vitejs/plugin-react": "^4.3.0",
+    "typescript": "^5.0.0",
+    "vite": "^5.4.0"
   }
 }
