@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { Cpu, ArrowLeft, Bluetooth, Zap, Database, LayoutDashboard, LineChart as ChartIcon } from 'lucide-react';
 import CANMonitor from '@/components/CANMonitor';
@@ -110,10 +109,15 @@ const App: React.FC = () => {
       }
       reader.releaseLock();
     } catch (err: any) { 
-      // This will now show "Access Denied" if permissions fail
-      setLastErrorMessage(err.message || "Unknown hardware error.");
+      // DISTINGUISH BETWEEN CANCEL AND ERROR
+      if (err.name === 'NotFoundError') {
+        setLastErrorMessage("Link Cancelled: No hardware port was selected.");
+        setBridgeStatus('disconnected');
+      } else {
+        setLastErrorMessage(err.message || "Hardware handshake failed.");
+        setBridgeStatus('error'); 
+      }
       addDebugLog(`FAULT: ${err.message}`);
-      setBridgeStatus('error'); 
     }
   };
 
@@ -152,9 +156,14 @@ const App: React.FC = () => {
       });
 
     } catch (err: any) { 
-      setLastErrorMessage(err.message || "Bluetooth handshake failed.");
+      if (err.name === 'NotFoundError') {
+        setLastErrorMessage("Scan Cancelled: No Bluetooth device selected.");
+        setBridgeStatus('disconnected');
+      } else {
+        setLastErrorMessage(err.message || "Bluetooth handshake failed.");
+        setBridgeStatus('error'); 
+      }
       addDebugLog(`BT_FAULT: ${err.message}`);
-      setBridgeStatus('error'); 
     }
   };
 
