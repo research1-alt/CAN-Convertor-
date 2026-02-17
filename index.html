@@ -1,67 +1,96 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>CAN Log Converter & Analyzer</title>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>OSM Live | Tactical HUD</title>
+    
+    <!-- PWA & Manifest -->
+    <link rel="manifest" href="/manifest.webmanifest">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="OSM HUD">
+    <meta name="theme-color" content="#4f46e5">
+    <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/lucide-react/lucide/main/icons/cpu.svg">
+    
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;700&display=swap" rel="stylesheet">
     <style>
-      :root {
-        --color-background: #0D1117;
-        --color-container: #161B22;
-        --color-border: rgba(13, 119, 248, 0.2);
-        --color-accent: #0d77f8;
-        --color-accent-glow: rgba(13, 119, 248, 0.4);
-        --color-text-primary: #e6edf3;
-        --color-text-secondary: #7d8590;
-      }
-      body {
-        background-color: var(--color-background);
-        color: var(--color-text-primary);
-        background-image: 
-          linear-gradient(rgba(22, 27, 34, 0.8) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(22, 27, 34, 0.8) 1px, transparent 1px);
-        background-size: 3rem 3rem;
-      }
-      /* Custom scrollbar for a better dark-theme experience */
-      .custom-scrollbar::-webkit-scrollbar {
-        height: 6px;
-        width: 6px;
-      }
-      .custom-scrollbar::-webkit-scrollbar-track {
-        background: rgba(255, 255, 255, 0.05);
-        border-radius: 3px;
-      }
-      .custom-scrollbar::-webkit-scrollbar-thumb {
-        background: rgba(13, 119, 248, 0.4);
-        border-radius: 3px;
-      }
-      .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-        background: rgba(13, 119, 248, 0.6);
-      }
+        :root {
+            --neon-indigo: #4f46e5;
+            --neon-emerald: #059669;
+            --neon-amber: #d97706;
+            --neon-red: #dc2626;
+        }
+        * {
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            box-sizing: border-box;
+        }
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            background-color: #ffffff;
+            color: #0f172a;
+            overflow: hidden;
+            width: 100vw;
+        }
+        #root {
+            height: 100vh;
+            height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+        .font-orbitron { font-family: 'Orbitron', sans-serif; }
+        .mono { font-family: 'JetBrains Mono', monospace; }
+        
+        .cyber-grid {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-image: 
+                linear-gradient(to right, rgba(79, 70, 229, 0.03) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(79, 70, 229, 0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            z-index: -1;
+        }
+
+        /* Responsive Safe Areas */
+        .safe-pb { padding-bottom: env(safe-area-inset-bottom); }
+        .safe-pt { padding-top: env(safe-area-inset-top); }
+
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-thumb { background: rgba(79, 70, 229, 0.2); border-radius: 10px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        
+        .min-h-0 { min-height: 0; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
     </style>
 <script type="importmap">
 {
   "imports": {
-    "react": "https://aistudiocdn.com/react@^19.2.0",
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
-    "react/": "https://aistudiocdn.com/react@^19.2.0/",
-    "xlsx": "https://aistudiocdn.com/xlsx@^0.18.5",
-    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.28.0",
-    "react-chartjs-2": "https://aistudiocdn.com/react-chartjs-2@^5.3.1",
-    "chart.js": "https://aistudiocdn.com/chart.js@^4.5.1",
-    "chartjs-plugin-zoom": "https://aistudiocdn.com/chartjs-plugin-zoom@^2.2.0",
-    "vite": "https://aistudiocdn.com/vite@^7.1.12",
-    "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.1.0"
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "react": "https://esm.sh/react@^19.2.3",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "@google/genai": "https://esm.sh/@google/genai@^1.34.0",
+    "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
+    "recharts": "https://esm.sh/recharts@2.15.0?bundle",
+    "vite": "https://esm.sh/vite@^7.3.1",
+    "path": "https://esm.sh/path@^0.12.7",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2",
+    "url": "https://esm.sh/url@^0.11.4"
   }
 }
 </script>
 <link rel="stylesheet" href="/index.css">
 </head>
-  <body class="bg-gray-900 text-gray-100">
+<body>
+    <div class="cyber-grid"></div>
     <div id="root"></div>
-    <script type="module" src="/src/index.tsx"></script>
-  <script type="module" src="/index.tsx"></script>
+<script type="module" src="/index.tsx"></script>
 </body>
 </html>

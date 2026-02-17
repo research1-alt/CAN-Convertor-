@@ -1,37 +1,59 @@
-export interface CANMessage {
-    timestamp: number | string;
-    id: string;
-    dlc: number;
-    data: string[];
-    isTx: boolean;
-    decoded?: { [signalName: string]: number };
+export interface CANFrame {
+  id: string; // Hex ID
+  dlc: number;
+  data: string[]; // Array of hex strings ["00", "FF", ...]
+  timestamp: number; // Relative to session start (ms)
+  absoluteTimestamp: number; // Unix epoch (ms) for RTC
+  direction: 'Rx' | 'Tx';
+  count: number;
+  periodMs: number;
+  isSimulated?: boolean;
 }
 
-export interface SignalDefinition {
-    name: string;
-    startBit: number;
-    length: number;
-    isLittleEndian: boolean;
-    isSigned: boolean;
-    scale: number;
-    offset: number;
-    min: number;
-    max: number;
-    unit: string;
+export interface TransmitFrame {
+  id: string;
+  dlc: number;
+  data: string[];
+  periodMs: number;
+  isActive: boolean;
 }
 
-export interface MessageDefinition {
-    name: string;
-    dlc: number;
-    signals: { [signalName: string]: SignalDefinition };
+export interface DBCSignal {
+  name: string;
+  startBit: number;
+  length: number;
+  isLittleEndian: boolean;
+  isSigned: boolean;
+  scale: number;
+  offset: number;
+  min: number;
+  max: number;
+  unit: string;
 }
 
-export type CanMatrix = {
-    // Message ID (decimal string) -> MessageDefinition
-    [messageId: string]: MessageDefinition;
-};
-
-export interface ChatMessage {
-    role: 'user' | 'model';
-    content: string;
+export interface DBCMessage {
+  name: string;
+  dlc: number;
+  signals: Record<string, DBCSignal>;
 }
+
+export type DBCDatabase = Record<string, DBCMessage>;
+
+export interface ConversionLibrary {
+  id: string;
+  name: string;
+  database: DBCDatabase;
+  lastUpdated: number;
+}
+
+export interface SignalAnalysis {
+  summary: string;
+  detectedProtocols: string[];
+  anomalies: string[];
+  recommendations: string;
+  sources: any[];
+}
+
+export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'error';
+export type HardwareStatus = 'offline' | 'searching' | 'active' | 'fault';
+export type LoggingStatus = 'idle' | 'logging' | 'paused' | 'stopped';
