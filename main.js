@@ -1,4 +1,3 @@
-
 import { app, BrowserWindow, session } from 'electron';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -9,11 +8,11 @@ const isDev = !app.isPackaged;
 
 function createWindow() {
   const win = new BrowserWindow({
-    width: 1366,
-    height: 768,
+    width: 1400,
+    height: 900,
     title: "OSM Live | Tactical HUD",
     autoHideMenuBar: true,
-    backgroundColor: '#ffffff',
+    backgroundColor: '#0f172a',
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
@@ -21,11 +20,9 @@ function createWindow() {
     },
   });
 
-  // Automatically handle hardware permissions (Serial/PCAN/Bluetooth)
+  // Handle hardware permissions automatically
   session.defaultSession.setPermissionCheckHandler((webContents, permission) => {
-    if (permission === 'serial' || permission === 'bluetooth') {
-      return true;
-    }
+    if (['serial', 'bluetooth', 'device-info'].includes(permission)) return true;
     return false;
   });
 
@@ -39,7 +36,8 @@ function createWindow() {
   });
 
   if (isDev) {
-    win.loadURL('http://localhost:3000');
+    win.loadURL('http://localhost:5173');
+    // win.webContents.openDevTools(); // Uncomment to debug
   } else {
     win.loadFile(path.join(__dirname, 'dist/index.html'));
   }
@@ -47,7 +45,6 @@ function createWindow() {
 
 app.whenReady().then(() => {
   createWindow();
-
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
