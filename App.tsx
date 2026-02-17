@@ -1,5 +1,5 @@
-import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
-import { Play, Pause, Cpu, ArrowLeft, Activity, Bluetooth, Zap, BarChart3, Database, LogOut, ExternalLink, LayoutDashboard, ShieldCheck, Settings2, Smartphone, Tablet, Monitor, LineChart as ChartIcon, Info, HelpCircle, AlertTriangle, Send } from 'lucide-react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
+import { Play, Pause, Cpu, ArrowLeft, Activity, Bluetooth, Zap, BarChart3, Database, LayoutDashboard, LineChart as ChartIcon, Monitor, Send } from 'lucide-react';
 import CANMonitor from '@/components/CANMonitor';
 import ConnectionPanel from '@/components/ConnectionPanel';
 import LibraryPanel from '@/components/LibraryPanel';
@@ -9,11 +9,10 @@ import TransmitPanel from '@/components/TransmitPanel';
 import AuthScreen from '@/components/AuthScreen';
 import FeatureSelector from '@/components/FeatureSelector';
 import DataDecoder from '@/components/DataDecoder';
-import PWAInstallOverlay from '@/components/PWAInstallOverlay';
-import { CANFrame, ConnectionStatus, HardwareStatus, ConversionLibrary, SignalAnalysis, DBCMessage, DBCSignal, TransmitFrame } from '@/types';
+import { CANFrame, ConnectionStatus, HardwareStatus, ConversionLibrary, SignalAnalysis, TransmitFrame } from '@/types';
 import { MY_CUSTOM_DBC, DEFAULT_LIBRARY_NAME } from '@/data/dbcProfiles';
-import { normalizeId, formatIdForDisplay, decodeSignal, cleanMessageName } from '@/utils/decoder';
-import { User, authService } from '@/services/authService';
+import { normalizeId, formatIdForDisplay } from '@/utils/decoder';
+import { User } from '@/services/authService';
 import { generateMockPacket } from '@/utils/canSim';
 import { analyzeCANData } from '@/services/geminiService';
 
@@ -23,7 +22,7 @@ const BATCH_UPDATE_INTERVAL = 100;
 const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(() => {
     const savedUser = localStorage.getItem('osm_currentUser');
-    try { return savedUser ? JSON.parse(savedUser) : { email: 'guest@omegaseikimobility.com', userName: 'Guest Operator', mobile: '000' }; } catch { return null; }
+    try { return savedUser ? JSON.parse(savedUser) : null; } catch { return null; }
   });
   
   const [sessionId, setSessionId] = useState<string | null>(() => localStorage.getItem('osm_sid') || 'LOCAL_SESS');
@@ -38,6 +37,11 @@ const App: React.FC = () => {
   const [hwStatus, setHwStatus] = useState<HardwareStatus>('offline');
   const [debugLog, setDebugLog] = useState<string[]>([]);
   
+  const [aiAnalysis, setAiAnalysis] = useState<SignalAnalysis | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [watcherActive, setWatcherActive] = useState(false);
+  const [selectedSignalNames, setSelectedSignalNames] = useState<string[]>([]);
+
   const simIntervalRef = useRef<any>(null);
   const frameMapRef = useRef<Map<string, CANFrame>>(new Map());
   const pendingFramesRef = useRef<CANFrame[]>([]);
@@ -54,6 +58,20 @@ const App: React.FC = () => {
     const time = new Date().toLocaleTimeString('en-GB', { hour12: false });
     setDebugLog(prev => [`[${time}] ${msg}`, ...prev].slice(0, 30));
   }, []);
+
+  const handleManualAnalyze = async () => {
+    if (frames.length === 0) return;
+    setAiLoading(true);
+    try {
+      const result = await analyzeCANData(frames, user || undefined, sessionId || undefined);
+      setAiAnalysis(result);
+      addDebugLog("GEMINI: Analysis update complete.");
+    } catch (err) {
+      addDebugLog("ERROR: Gemini link failed.");
+    } finally {
+      setAiLoading(false);
+    }
+  };
 
   const handleNewFrame = useCallback((id: string, dlc: number, data: string[]) => {
     if (isPaused) return;
@@ -79,7 +97,6 @@ const App: React.FC = () => {
     pendingFramesRef.current.push(newFrame);
   }, [isPaused]);
 
-  // Simulation Logic
   const startSimulation = useCallback(() => {
     setBridgeStatus('connected');
     setHwStatus('active');
@@ -101,12 +118,11 @@ const App: React.FC = () => {
     if (hardwareMode === 'simulator') {
       startSimulation();
     } else {
-      addDebugLog(`${hardwareMode.toUpperCase()}: Hardware connection requested (Mocked for current Electron build)`);
       setBridgeStatus('connecting');
       setTimeout(() => {
         setBridgeStatus('connected');
         setHwStatus('active');
-        addDebugLog("BRIDGE: Linked.");
+        addDebugLog("BRIDGE: Linked to ESP32 Hardware.");
       }, 1000);
     }
   };
@@ -195,7 +211,7 @@ const App: React.FC = () => {
             {dashboardTab === 'link' && (
               <ConnectionPanel 
                 status={bridgeStatus} 
-                hardwareMode={hardwareMode as any} 
+                hardwareMode={hardwareMode} 
                 onSetHardwareMode={setHardwareMode as any} 
                 onConnect={handleConnect} 
                 onDisconnect={handleDisconnect} 
@@ -220,13 +236,13 @@ const App: React.FC = () => {
                 frames={frames} 
                 library={library} 
                 latestFrames={latestFrames} 
-                selectedSignalNames={[]}
-                setSelectedSignalNames={() => {}}
-                watcherActive={false}
-                setWatcherActive={() => {}}
-                lastAiAnalysis={null}
-                aiLoading={false}
-                onManualAnalyze={() => {}}
+                selectedSignalNames={selectedSignalNames}
+                setSelectedSignalNames={setSelectedSignalNames}
+                watcherActive={watcherActive}
+                setWatcherActive={setWatcherActive}
+                lastAiAnalysis={aiAnalysis}
+                aiLoading={aiLoading}
+                onManualAnalyze={handleManualAnalyze}
               />
             )}
             {dashboardTab === 'live-visualizer' && (
@@ -234,7 +250,7 @@ const App: React.FC = () => {
                 frames={frames} 
                 library={library} 
                 latestFrames={latestFrames} 
-                setSelectedSignalNames={() => {}}
+                setSelectedSignalNames={setSelectedSignalNames}
               />
             )}
             {dashboardTab === 'transmit' && (

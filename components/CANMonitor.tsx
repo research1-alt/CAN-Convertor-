@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { CANFrame, ConversionLibrary } from '@/types';
-import { Terminal, Lock, Unlock, RefreshCw, Clock, Timer, Info, Save, Loader2, Zap } from 'lucide-react';
+import { Terminal, Lock, Unlock, RefreshCw, Loader2, Zap } from 'lucide-react';
 
 interface CANMonitorProps {
   frames: CANFrame[];
@@ -14,6 +14,7 @@ interface CANMonitorProps {
 const CANMonitor: React.FC<CANMonitorProps> = ({ 
   frames, 
   isPaused, 
+  library,
   onClearTrace, 
   onSaveTrace,
   isSaving = false,
@@ -37,7 +38,7 @@ const CANMonitor: React.FC<CANMonitorProps> = ({
             <Terminal size={12} /> LIVE_TRACE
           </div>
           <div className="text-[10px] font-mono text-slate-500">
-            REC: {frames.length}
+            REC: {frames.length} | LIB: {library.name.substring(0, 10)}...
           </div>
         </div>
         

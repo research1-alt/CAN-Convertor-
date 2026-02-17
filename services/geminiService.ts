@@ -10,8 +10,8 @@ export async function analyzeCANData(
   user?: User, 
   sessionId?: string
 ): Promise<SignalAnalysis> {
+  // Use gemini-3-pro-preview for complex engineering tasks
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  // Using gemini-3-pro-preview for complex engineering reasoning
   const model = 'gemini-3-pro-preview';
   
   const frameSummary = frames.slice(-50).map(f => ({
@@ -38,8 +38,8 @@ export async function analyzeCANData(
       contents: [{ parts: [{ text: prompt }] }],
     });
 
-    // CRITICAL: response.text is a property, not a method.
-    const text = response.text || "Diagnostic analysis unavailable. Check neural link.";
+    // CRITICAL: Access .text property directly, not as a method.
+    const text = response.text || "Analysis result unavailable. Check connectivity.";
     const isUnclear = text.length < 50 || text.toLowerCase().includes("cannot determine");
 
     if (user && sessionId) {
@@ -49,8 +49,8 @@ export async function analyzeCANData(
     return {
       summary: text,
       detectedProtocols: text.toLowerCase().includes('j1939') ? ['J1939'] : text.toLowerCase().includes('obd') ? ['OBD-II'] : ['Generic CAN / OSM Proprietary'],
-      anomalies: text.toLowerCase().includes('anomaly') || text.toLowerCase().includes('fault') ? ['Critical behavioral anomaly detected'] : [],
-      recommendations: "Consult the OSM Technical Manual (v8.4) for active fault codes and verify bus termination resistance.",
+      anomalies: text.toLowerCase().includes('anomaly') || text.toLowerCase().includes('fault') ? ['Potential behavioral anomaly detected'] : [],
+      recommendations: "Refer to the OSM Technical Manual (v8.4) for active fault code verification.",
       sources: [] 
     };
   } catch (error) {
