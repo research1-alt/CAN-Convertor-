@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { Cpu, ArrowLeft, Bluetooth, Zap, Database, LayoutDashboard, LineChart as ChartIcon } from 'lucide-react';
+import { Cpu, ArrowLeft, Bluetooth, Zap, Database, LayoutDashboard, LineChart as ChartIcon, ShieldCheck, ShieldAlert, Wifi } from 'lucide-react';
 import CANMonitor from '@/components/CANMonitor';
 import ConnectionPanel from '@/components/ConnectionPanel';
 import LibraryPanel from '@/components/LibraryPanel';
@@ -13,7 +13,7 @@ import { normalizeId, formatIdForDisplay } from '@/utils/decoder';
 import { User } from '@/services/authService';
 
 const MAX_FRAME_LIMIT = 500000; 
-const BATCH_UPDATE_INTERVAL = 50; 
+const BATCH_UPDATE_INTERVAL = 40; // Faster updates for live data
 
 const UART_SERVICE_UUID = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
 const TX_CHAR_UUID = "6e400003-b5a3-f393-e0a9-e50e24dcca9e";
@@ -32,6 +32,7 @@ const App: React.FC = () => {
   const [bridgeStatus, setBridgeStatus] = useState<ConnectionStatus>('disconnected');
   const [lastErrorMessage, setLastErrorMessage] = useState<string>("");
   const [debugLog, setDebugLog] = useState<string[]>([]);
+  const [isElectron, setIsElectron] = useState(false);
   const [library, setLibrary] = useState<ConversionLibrary>({
     id: 'default-pcan-lib',
     name: DEFAULT_LIBRARY_NAME,
@@ -46,6 +47,14 @@ const App: React.FC = () => {
   const keepReadingRef = useRef(false);
   const dataBufferRef = useRef<string>("");
 
+  useEffect(() => {
+    const userAgent = navigator.userAgent.toLowerCase();
+    if (userAgent.indexOf(' electron/') > -1) {
+      setIsElectron(true);
+      console.log("SYS: Desktop Bridge Detected");
+    }
+  }, []);
+
   const addDebugLog = useCallback((msg: string) => {
     const time = new Date().toLocaleTimeString('en-GB', { hour12: false });
     setDebugLog(prev => [`[${time}] ${msg}`, ...prev].slice(0, 50));
@@ -57,9 +66,10 @@ const App: React.FC = () => {
       const lines = dataBufferRef.current.split('\n');
       dataBufferRef.current = lines.pop() || "";
       for (const line of lines) {
+        if (!line.trim()) continue;
         const parts = line.trim().split('#');
         if (parts.length >= 3) {
-            handleNewFrame(parts[0], parseInt(parts[1]), parts[2].split(','));
+          handleNewFrame(parts[0], parseInt(parts[1]), parts[2].split(','));
         }
       }
     }
@@ -81,14 +91,14 @@ const App: React.FC = () => {
 
   const connectSerial = async () => {
     if (!("serial" in navigator)) { 
-      setLastErrorMessage("Web Serial is blocked by Windows security policies.");
+      setLastErrorMessage("Browser Block: Web Serial API not found. Please use Chrome or the Windows HUD App.");
       setBridgeStatus('error');
       return; 
     }
     try {
       setLastErrorMessage("");
       setBridgeStatus('connecting');
-      addDebugLog("ACTION: Handshaking with Windows COM port...");
+      addDebugLog("HANDSHAKE: Requesting access to PCAN Tool...");
       
       const port = await (navigator as any).serial.requestPort();
       await port.open({ baudRate: 115200 });
@@ -96,41 +106,45 @@ const App: React.FC = () => {
       serialPortRef.current = port;
       sessionStartTimeRef.current = performance.now();
       setBridgeStatus('connected');
-      addDebugLog("SUCCESS: Physical Bridge Locked.");
+      addDebugLog("SUCCESS: Tactical Link Established via Serial.");
       keepReadingRef.current = true;
       
       const reader = port.readable.getReader();
       const decoder = new TextDecoder();
       
       while (keepReadingRef.current) {
-        const { value, done } = await reader.read();
-        if (done) break;
-        processDataChunk(decoder.decode(value, { stream: true }));
+        try {
+          const { value, done } = await reader.read();
+          if (done) break;
+          processDataChunk(decoder.decode(value, { stream: true }));
+        } catch (readError) {
+          console.error("Read Error", readError);
+          break;
+        }
       }
       reader.releaseLock();
     } catch (err: any) { 
-      // DISTINGUISH BETWEEN CANCEL AND ERROR
       if (err.name === 'NotFoundError') {
-        setLastErrorMessage("Link Cancelled: No hardware port was selected.");
+        setLastErrorMessage("CANCELLED: No hardware device was selected.");
         setBridgeStatus('disconnected');
       } else {
-        setLastErrorMessage(err.message || "Hardware handshake failed.");
+        setLastErrorMessage(err.message || "BRIDGE_FAULT: Resource busy or hardware disconnected.");
         setBridgeStatus('error'); 
       }
-      addDebugLog(`FAULT: ${err.message}`);
+      addDebugLog(`ERROR: ${err.message}`);
     }
   };
 
   const connectWebBluetooth = async () => {
     if (!(navigator as any).bluetooth) { 
-      setLastErrorMessage("Web Bluetooth is blocked by Windows security policies.");
+      setLastErrorMessage("Browser Block: Bluetooth scanning not supported.");
       setBridgeStatus('error');
       return; 
     }
     try {
       setLastErrorMessage("");
       setBridgeStatus('connecting');
-      addDebugLog("ACTION: Scanning for Bluetooth Link...");
+      addDebugLog("HANDSHAKE: Scanning for OSM Wireless Bridge...");
       const device = await (navigator as any).bluetooth.requestDevice({ 
         filters: [{ services: [UART_SERVICE_UUID] }],
         optionalServices: [UART_SERVICE_UUID]
@@ -143,7 +157,7 @@ const App: React.FC = () => {
       await txChar.startNotifications();
       setBridgeStatus('connected');
       sessionStartTimeRef.current = performance.now();
-      addDebugLog("SUCCESS: Wireless Bridge Established.");
+      addDebugLog("SUCCESS: Wireless Link Active.");
 
       txChar.addEventListener('characteristicvaluechanged', (event: any) => {
         const chunk = new TextDecoder().decode(event.target.value);
@@ -152,18 +166,18 @@ const App: React.FC = () => {
       
       device.addEventListener('gattserverdisconnected', () => {
         setBridgeStatus('disconnected');
-        addDebugLog("WARN: Bluetooth Link Lost.");
+        addDebugLog("ALERT: Wireless Link Terminated.");
       });
 
     } catch (err: any) { 
       if (err.name === 'NotFoundError') {
-        setLastErrorMessage("Scan Cancelled: No Bluetooth device selected.");
+        setLastErrorMessage("CANCELLED: No Bluetooth device selected.");
         setBridgeStatus('disconnected');
       } else {
-        setLastErrorMessage(err.message || "Bluetooth handshake failed.");
+        setLastErrorMessage(err.message || "BT_FAULT: Handshake failed.");
         setBridgeStatus('error'); 
       }
-      addDebugLog(`BT_FAULT: ${err.message}`);
+      addDebugLog(`ERROR: ${err.message}`);
     }
   };
 
@@ -195,26 +209,56 @@ const App: React.FC = () => {
     <div className="h-full w-full font-inter flex flex-col min-h-0 overflow-hidden bg-white">
       {view === 'home' ? (
         <div className="flex-1 w-full flex flex-col items-center justify-center bg-white px-6">
-          <div className="bg-indigo-600 p-6 rounded-[32px] text-white shadow-2xl mb-12 animate-pulse"><Cpu size={64} /></div>
-          <h1 className="text-4xl md:text-8xl font-orbitron font-black text-slate-900 uppercase text-center">OSM <span className="text-indigo-600">LIVE</span></h1>
+          <div className="bg-indigo-600 p-6 rounded-[32px] text-white shadow-2xl mb-12 animate-pulse">
+            <Cpu size={64} />
+          </div>
+          <h1 className="text-4xl md:text-8xl font-orbitron font-black text-slate-900 uppercase text-center">
+            OSM <span className="text-indigo-600">LIVE</span>
+          </h1>
           <div className="flex flex-col gap-4 w-full max-w-xs mt-12 text-center">
-            <button onClick={() => setView('select')} className="w-full py-6 bg-indigo-600 text-white rounded-3xl font-orbitron font-black uppercase shadow-2xl transition-all active:scale-95">Enter Command Deck</button>
+            <button 
+              onClick={() => setView('select')} 
+              className="w-full py-6 bg-indigo-600 text-white rounded-3xl font-orbitron font-black uppercase shadow-2xl transition-all active:scale-95"
+            >
+              Enter Deck
+            </button>
           </div>
         </div>
       ) : view === 'select' ? (
-        <div className="flex-1 w-full overflow-y-auto min-h-0 bg-white"><FeatureSelector onSelect={(v) => setView(v)} /></div>
+        <div className="flex-1 w-full overflow-y-auto min-h-0 bg-white">
+          <FeatureSelector onSelect={(v) => setView(v)} />
+        </div>
       ) : view === 'decoder' ? (
-        <div className="flex-1 w-full overflow-hidden min-h-0"><DataDecoder library={library} onExit={() => setView('select')} /></div>
+        <div className="flex-1 w-full overflow-hidden min-h-0">
+          <DataDecoder library={library} onExit={() => setView('select')} />
+        </div>
       ) : (
         <div className="flex-1 w-full flex flex-col bg-slate-50 safe-pt overflow-hidden relative min-h-0">
           <header className="h-14 md:h-16 border-b flex items-center justify-between px-4 md:px-6 bg-white shrink-0 z-[100]">
             <div className="flex items-center gap-3 md:gap-4">
-              <button onClick={() => setView('select')} className="p-1.5 md:p-2 hover:bg-slate-100 rounded-full transition-colors"><ArrowLeft size={18} /></button>
-              <h2 className="text-[10px] md:text-[12px] font-orbitron font-black text-slate-900 uppercase tracking-widest">DECK_HUD</h2>
+              <button onClick={() => setView('select')} className="p-1.5 md:p-2 hover:bg-slate-100 rounded-full transition-colors">
+                <ArrowLeft size={18} />
+              </button>
+              <h2 className="text-[10px] md:text-[12px] font-orbitron font-black text-slate-900 uppercase tracking-widest flex items-center gap-2">
+                <Wifi size={14} className="text-indigo-600" /> DECK_HUD
+              </h2>
             </div>
-            {bridgeStatus === 'connected' && (
-              <div className="flex items-center gap-2 px-3 py-1 bg-emerald-50 text-emerald-600 rounded-lg text-[8px] font-orbitron font-black border border-emerald-100"><Zap size={10} /> STREAM_LIVE</div>
-            )}
+            <div className="flex items-center gap-2">
+              {isElectron && (
+                <div className="flex items-center gap-1.5 px-2 py-1 bg-indigo-50 text-indigo-600 rounded-lg text-[8px] font-orbitron font-black border border-indigo-100">
+                  <ShieldCheck size={10} /> DESKTOP_BRIDGE
+                </div>
+              )}
+              {bridgeStatus === 'connected' ? (
+                <div className="flex items-center gap-2 px-3 py-1 bg-emerald-50 text-emerald-600 rounded-lg text-[8px] font-orbitron font-black border border-emerald-100 animate-pulse">
+                  <Zap size={10} /> STREAM_LIVE
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 px-3 py-1 bg-slate-50 text-slate-400 rounded-lg text-[8px] font-orbitron font-black border border-slate-100">
+                  OFFLINE
+                </div>
+              )}
+            </div>
           </header>
 
           <main className="flex-1 overflow-hidden relative flex flex-col min-h-0">
@@ -228,6 +272,7 @@ const App: React.FC = () => {
                 onDisconnect={() => {
                   keepReadingRef.current = false;
                   setBridgeStatus('disconnected');
+                  addDebugLog("ACTION: Manual Link Termination.");
                 }} 
                 debugLog={debugLog} 
               />
@@ -249,8 +294,13 @@ const App: React.FC = () => {
                 { id: 'library', icon: Database, label: 'MATRIX' },
                 { id: 'live-visualizer', icon: ChartIcon, label: 'VISUAL' }
             ].map(tab => (
-                <button key={tab.id} onClick={() => setDashboardTab(tab.id as any)} className={`flex flex-col items-center gap-1 px-3 py-1.5 rounded-xl transition-all ${dashboardTab === tab.id ? 'text-indigo-600 bg-indigo-50' : 'text-slate-400'}`}>
-                    <tab.icon size={18} /><span className="text-[7px] md:text-[8px] font-orbitron font-black uppercase">{tab.label}</span>
+                <button 
+                  key={tab.id} 
+                  onClick={() => setDashboardTab(tab.id as any)} 
+                  className={`flex flex-col items-center gap-1 px-3 py-1.5 rounded-xl transition-all ${dashboardTab === tab.id ? 'text-indigo-600 bg-indigo-50 shadow-sm' : 'text-slate-400'}`}
+                >
+                    <tab.icon size={18} />
+                    <span className="text-[7px] md:text-[8px] font-orbitron font-black uppercase tracking-tighter">{tab.label}</span>
                 </button>
             ))}
           </nav>

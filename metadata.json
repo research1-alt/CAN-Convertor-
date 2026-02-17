@@ -1,4 +1,3 @@
-
 {
   "name": "OSM LIVE HUD | Hardware Ready",
   "description": "Tactical HUD for ESP32 CAN Bridge via Serial and Bluetooth BLE.",
