@@ -1,6 +1,7 @@
+
 {
-  "name": "OSM LIVE HUD | Hardware Ready",
-  "description": "Tactical HUD for ESP32 CAN Bridge via Serial and Bluetooth BLE.",
+  "name": "OSM PCAN LIVE HUB",
+  "description": "Professional-grade CAN bus diagnostic terminal with AI insights.",
   "requestFramePermissions": [
     "serial",
     "bluetooth"

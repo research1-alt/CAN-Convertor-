@@ -5,7 +5,6 @@ import { ConnectionStatus, HardwareStatus } from '../types.ts';
 
 interface ConnectionPanelProps {
   status: ConnectionStatus;
-  errorMessage?: string;
   hwStatus?: HardwareStatus;
   hardwareMode: 'esp32-serial' | 'esp32-bt';
   onSetHardwareMode: (mode: 'esp32-serial' | 'esp32-bt') => void;
@@ -16,7 +15,6 @@ interface ConnectionPanelProps {
 
 const ConnectionPanel: React.FC<ConnectionPanelProps> = ({ 
   status, 
-  errorMessage,
   hardwareMode,
   onSetHardwareMode,
   onConnect, 
@@ -25,11 +23,14 @@ const ConnectionPanel: React.FC<ConnectionPanelProps> = ({
 }) => {
   const [isNative, setIsNative] = useState(false);
   const [showTroubleshooting, setShowTroubleshooting] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const isDesktop = useMemo(() => !isNative && /Windows|Macintosh|Linux/.test(navigator.userAgent), [isNative]);
 
   useEffect(() => {
     setIsNative(!!(window as any).NativeBleBridge);
   }, []);
+
+  const hasGattError = useMemo(() => debugLog.some(log => log.includes('GATT') || log.includes('BLE_FAULT')), [debugLog]);
 
   const getStatusDetail = () => {
     if (status === 'connected') return {
@@ -44,9 +45,15 @@ const ConnectionPanel: React.FC<ConnectionPanelProps> = ({
       icon: <Loader2 className="text-indigo-500 animate-spin" size={24} />,
       color: "bg-indigo-50 border-indigo-100 text-indigo-700"
     };
+    if (hasGattError && isDesktop && hardwareMode === 'esp32-bt') return {
+      title: "DESKTOP_GATT_LOCK",
+      desc: "Device is locked by the OS. Unpair it from System Settings.",
+      icon: <Monitor className="text-red-500" size={24} />,
+      color: "bg-red-50 border-red-100 text-red-700"
+    };
     if (status === 'error') return {
       title: "BRIDGE_ERROR",
-      desc: errorMessage || "Protocol fault. Reset hardware power and try again.",
+      desc: "Protocol fault. Reset hardware power and try again.",
       icon: <AlertCircle className="text-red-500" size={24} />,
       color: "bg-red-50 border-red-100 text-red-700"
     };
@@ -107,6 +114,7 @@ const ConnectionPanel: React.FC<ConnectionPanelProps> = ({
                </p>
             </div>
 
+            {/* Device Not Visible Troubleshooting */}
             <div className="mb-6">
               <button 
                 onClick={() => setShowTroubleshooting(!showTroubleshooting)}
@@ -120,13 +128,19 @@ const ConnectionPanel: React.FC<ConnectionPanelProps> = ({
                   <div className="flex gap-3">
                     <div className="text-[9px] font-orbitron font-black text-indigo-600 bg-white w-5 h-5 flex items-center justify-center rounded-lg shadow-sm shrink-0">1</div>
                     <p className="text-[10px] text-slate-600 font-medium leading-snug">
-                      <b>Windows App Users:</b> You MUST rebuild the .exe if the hardware fails. The Main process handles security permissions.
+                      <b>Desktop/Laptop Users:</b> Use the <b>Wired (USB)</b> mode for 100% reliability. The default baud rate is locked to 115200.
                     </p>
                   </div>
                   <div className="flex gap-3">
                     <div className="text-[9px] font-orbitron font-black text-indigo-600 bg-white w-5 h-5 flex items-center justify-center rounded-lg shadow-sm shrink-0">2</div>
                     <p className="text-[10px] text-slate-600 font-medium leading-snug">
-                      <b>Check Other Apps:</b> Ensure Arduino IDE, Serial Monitor, or PCAN-View are CLOSED. Only one app can use a port at a time.
+                      <b>Bluetooth Troubleshooting:</b> If device is invisible, go to System Settings and <b>Unpair/Forget</b> it. Then restart the ESP32.
+                    </p>
+                  </div>
+                  <div className="flex gap-3">
+                    <div className="text-[9px] font-orbitron font-black text-indigo-600 bg-white w-5 h-5 flex items-center justify-center rounded-lg shadow-sm shrink-0">3</div>
+                    <p className="text-[10px] text-slate-600 font-medium leading-snug">
+                      <b>Hard Reset:</b> Unplug and replug the hardware. Wait 5 seconds for the boot sequence to complete.
                     </p>
                   </div>
                   <button 

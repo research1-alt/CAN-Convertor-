@@ -1,46 +1,17 @@
+
 {
-  "name": "pcan-live-insight-dashboard",
+  "name": "osm-live-hud",
   "private": true,
   "version": "1.0.0",
-  "main": "electron-main.cjs",
+  "main": "electron/main.js",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "electron:dev": "vite & wait-on http://localhost:3000 && cross-env NODE_ENV=development electron .",
-    "electron:build": "npm run build && electron-builder"
-  },
-  "build": {
-    "appId": "com.osm.live.hud",
-    "productName": "OSM Live HUD",
-    "copyright": "Copyright © 2024 Omega Seiki Mobility",
-    "directories": {
-      "output": "release"
-    },
-    "files": [
-      "dist/**/*",
-      "electron-main.cjs",
-      "public/**/*"
-    ],
-    "win": {
-      "target": [
-        {
-          "target": "nsis",
-          "arch": [
-            "x64"
-          ]
-        }
-      ],
-      "icon": "public/cpu.png"
-    },
-    "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true,
-      "createDesktopShortcut": true,
-      "installerIcon": "public/cpu.png",
-      "uninstallerIcon": "public/cpu.png"
-    }
+    "electron:dev": "concurrently \"npm run dev\" \"wait-on http://localhost:3000 && cross-env NODE_ENV=development electron .\"",
+    "electron:build": "npm run build && electron-builder",
+    "postinstall": "electron-builder install-app-deps"
   },
   "dependencies": {
     "react": "^19.2.3",
@@ -52,11 +23,12 @@
   "devDependencies": {
     "@types/node": "^22.14.0",
     "@vitejs/plugin-react": "^5.0.0",
-    "cross-env": "^7.0.3",
-    "electron": "^31.0.0",
-    "electron-builder": "^24.13.3",
     "typescript": "~5.8.2",
     "vite": "^6.2.0",
-    "wait-on": "^7.2.0"
+    "electron": "^33.0.0",
+    "electron-builder": "^25.1.8",
+    "concurrently": "^9.1.0",
+    "wait-on": "^8.0.1",
+    "cross-env": "^7.0.3"
   }
 }

@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { CANFrame, ConversionLibrary, DBCMessage, DBCSignal } from '../types.ts';
 import { normalizeId, decodeSignal, cleanMessageName } from '../utils/decoder.ts';
@@ -54,10 +53,8 @@ const LiveVisualizerDashboard: React.FC<LiveVisualizerDashboardProps> = ({
     const now = performance.now();
 
     const frameEntries = Object.entries(latestFrames || {});
-    // Fix: Explicitly cast frame as CANFrame to resolve "Property 'timestamp' does not exist on type 'unknown'" error
     frameEntries.forEach(([normId, frame]) => {
-      const f = frame as CANFrame;
-      if (!isOffline && (now - f.timestamp > LIVE_TIMEOUT_MS)) return;
+      if (!isOffline && (now - frame.timestamp > LIVE_TIMEOUT_MS)) return;
 
       const dbe = (Object.entries(library?.database || {}) as [string, DBCMessage][]).find(([decId]) => normalizeId(decId) === normId);
       if (dbe) {
@@ -184,8 +181,7 @@ const LiveVisualizerDashboard: React.FC<LiveVisualizerDashboardProps> = ({
 
       // Extract unit from library
       let unit = "";
-      // Fix: Cast Object.values result to DBCMessage[] to resolve "Property 'signals' does not exist on type 'unknown'" errors
-      for (const msg of Object.values(library.database) as DBCMessage[]) {
+      for (const msg of Object.values(library.database)) {
         if (msg.signals[sigName]) {
           unit = msg.signals[sigName].unit;
           break;
